@@ -96,3 +96,23 @@ button.toggle.on{background:#3b5ea8;border-color:#4a70c0;color:#fff}
   background:rgba(59,94,168,.25);border:3px dashed #7aa2f7;color:#fff;font-size:20px;z-index:100;
 }
 #dropHint.on{display:flex}
+
+/* ---------- pared vacía ---------- */
+#stage[hidden],#emptyState[hidden]{display:none}
+body.empty .needs-wall{opacity:.35;pointer-events:none}
+
+#emptyState{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  width:min(430px,74%);aspect-ratio:4/5;padding:30px;
+  background:#131313;border:2px dashed #3a3a3a;border-radius:14px;
+  color:#c9c9c9;text-align:center;cursor:pointer;
+}
+#emptyState:hover{background:#181818;border-color:#4a70c0;color:#fff}
+#emptyState:active{transform:none}
+#emptyState .ico{
+  display:grid;place-items:center;width:54px;height:54px;border-radius:50%;
+  background:#2a2a2a;border:1px solid #3a3a3a;color:#9db4e8;font-size:28px;line-height:1;
+}
+#emptyState:hover .ico{background:#3b5ea8;border-color:#4a70c0;color:#fff}
+#emptyState strong{font-size:15px;font-weight:600;letter-spacing:.1px}
+#emptyState small{font-size:12px;color:#8d8d8d;line-height:1.55;max-width:27em}

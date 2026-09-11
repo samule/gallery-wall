@@ -1,40 +1,48 @@
 # Gallery wall
 
-Probador de cuadros sobre la foto real de la pared del escritorio.
+Probador de cuadros sobre la foto real de una pared, con medidas en centímetros.
 
 ## Abrir
 
-Doble clic en **`abrir.command`**. Levanta un servidor local y abre el navegador solo.
-Dejá la ventana de Terminal abierta mientras usás la app y cerrala cuando termines.
+Doble clic en **`index.html`** y se abre en el navegador. No hay que instalar ni
+compilar nada.
 
-También podés abrir `index.html` directo en Chrome, pero por `file://` Safari no deja
-guardar el layout. Con `abrir.command` funciona en cualquier navegador.
+Si está publicado con GitHub Pages, también anda desde la URL y no hace falta bajarse
+los archivos.
+
+Usá Chrome o Firefox. Safari no guarda nada cuando la app se abre como archivo local
+(bloquea el almacenamiento en `file://`); si querés usar Safari, entrá por la URL.
+
+Ojo: el archivo local y la URL son dos instalaciones separadas. No comparten paredes ni
+cuadros, porque el navegador guarda los datos por origen. Para pasar de una a la otra
+está la copia de seguridad.
 
 ## Cómo funciona
 
 La foto está fija. Encima hay un plano de pared calibrado en centímetros reales, con la
-perspectiva de la foto. Por eso un cuadro de 30×40 se ve más chico si lo ponés cerca del
-escritorio y más grande cerca de la puerta: así se va a ver en la realidad.
+perspectiva de la foto. Por eso un cuadro de 30×40 se ve más chico si lo ponés al fondo
+y más grande si lo ponés cerca: así se va a ver en la realidad.
 
-## Otras paredes
+La luz de la pared se muestrea sola de cada foto, así que los cuadros toman la
+iluminación de esa habitación sin que tengas que tocar nada.
 
-Con **Subir foto…** cargás la foto de cualquier pared y la probás igual que la del
-escritorio. Cada pared guarda su propia calibración, sus cuadros y sus versiones, y podés
-alternar entre ellas con el selector de arriba.
+## Paredes
 
-Las imágenes de los cuadros son comunes a todas las paredes: subís una lámina una vez y la
-probás donde quieras sin volver a cargarla.
+La primera vez la app arranca vacía, con un cartel para subir la foto de tu pared. Con
+**Subir foto…** agregás las que quieras y alternás entre ellas con el selector de arriba.
 
-Al crear una pared nueva se abre sola la calibración con las 4 esquinas puestas. Poné las
-dos de abajo sobre la línea del piso y las dos de arriba en el techo, o a cualquier altura
-que sepas medir, y después escribí el ancho y el alto reales de ese rectángulo. Sin eso las
-medidas en cm no significan nada.
+Al crear una pared se abre sola la calibración con las 4 esquinas puestas. Poné las dos
+de abajo sobre la línea del piso y las dos de arriba en el techo, o a cualquier altura
+que sepas medir, y después escribí el ancho y el alto reales de ese rectángulo. Sin eso
+las medidas en cm no significan nada.
 
-La luz de la pared se muestrea sola de cada foto, así que los cuadros toman la iluminación
-de esa habitación sin que tengas que tocar nada.
+Cada pared guarda su propia calibración, sus cuadros y sus versiones. Las imágenes de los
+cuadros son comunes a todas: subís una lámina una vez y la probás donde quieras sin
+volver a cargarla.
 
-Ojo con el espacio: el navegador guarda unos 5 MB y abajo de todo ves cuánto llevás usado.
-Cada foto de pared pesa alrededor de 300 KB.
+Ojo con el espacio: el navegador guarda unos 5 MB y abajo de todo ves cuánto llevás
+usado. Cada foto de pared pesa alrededor de 300 KB. Si subís láminas, en JPEG rinden
+mucho más que en PNG.
 
 ## Uso
 
@@ -48,26 +56,32 @@ Cada foto de pared pesa alrededor de 300 KB.
   borde o por centro, y hace snap. Mantené Alt para desactivarlas.
 - **Línea de 150 cm**: la altura de museo, el centro del conjunto suele ir ahí.
 - **Borrar**: tecla Delete o el botón.
-- **Deshacer**: Cmd+Z. Rehacer: Cmd+Shift+Z.
+- **Deshacer**: Cmd+Z. Rehacer: Cmd+Shift+Z. Cubre cuadros y calibración, no el borrado
+  de una pared entera.
 - **Versiones**: guardá varios layouts con nombre y alterná entre ellos.
 - **Exportar PNG**: baja la foto con los cuadros puestos, con perspectiva y sombras.
 
-Se guarda solo en el navegador. Si vaciás los datos del sitio, se pierde.
+## Calibración
 
-## Calibración de la pared del escritorio
+Una pared nueva arranca en 300 × 260 cm con las esquinas en un rectángulo cualquiera. Los
+dos números que importan son el ancho y el alto reales del rectángulo que marcaste: es lo
+único que hace falta para que las medidas sean exactas.
 
-Los valores por defecto son **300 × 260 cm**, las medidas reales de la pared, y las
-cuatro esquinas del plano están marcadas sobre la foto. Con eso las medidas en cm ya
-salen bien, no hace falta tocar nada.
+Si algo no calza, tildá "Mover las esquinas de la pared" y arrastrá los cuatro puntos.
+"Volver a la calibración original" devuelve esa pared a como estaba cuando la creaste.
 
-Si querés otros números, escribí ancho y alto en el panel de Calibración y todo se
-reajusta solo. "Volver a la calibración original" devuelve estos 300 × 260.
+## Copia de seguridad
 
-Si algo no calza (por ejemplo cambiás la foto), tildá "Mover las esquinas de la pared" y
-arrastrá los cuatro puntos a las esquinas reales.
+Todo se guarda solo en este navegador. Si vaciás los datos del sitio, se pierde, y no se
+sincroniza con ningún lado.
+
+**Exportar .json** baja un archivo con todas las paredes, los cuadros y las versiones.
+Es la única copia que vive fuera del navegador, y es la forma de llevar tu trabajo a otra
+máquina, a otro navegador o entre el archivo local y la URL publicada.
+
+**Importar** reemplaza todo lo que tengas guardado por el contenido de la copia. Pide
+confirmación antes.
 
 ## Archivos
 
-- `index.html`, `styles.css`, `app.js` — la app
-- `pared.js` — la foto de la pared, embebida en base64
-- `abrir.command` — lanzador
+- `index.html`, `styles.css`, `app.js` — la app entera, sin dependencias

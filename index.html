@@ -27,7 +27,7 @@
     <input type="file" id="wallInput" accept="image/*" hidden>
   </section>
 
-  <section>
+  <section class="needs-wall">
     <button id="btnAdd" class="primary">Agregar cuadro</button>
     <input type="file" id="fileInput" accept="image/*" multiple hidden>
     <p class="hint">o arrastr&aacute; im&aacute;genes a la pared</p>
@@ -74,7 +74,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="needs-wall">
     <h2>Vista</h2>
     <label class="check"><input type="checkbox" id="chkGuides" checked> Gu&iacute;as de alineaci&oacute;n</label>
     <label class="check"><input type="checkbox" id="chkMuseum" checked> L&iacute;nea de 150 cm</label>
@@ -84,7 +84,7 @@
     </label>
   </section>
 
-  <section>
+  <section class="needs-wall">
     <h2>Versiones</h2>
     <div class="row">
       <select id="verSelect"></select>
@@ -96,7 +96,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="needs-wall">
     <h2>Calibraci&oacute;n</h2>
     <div class="row2">
       <label>Ancho pared (cm) <input type="number" id="inWallW" step="1" min="20"></label>
@@ -107,11 +107,22 @@
     <button id="btnCalReset">Volver a la calibraci&oacute;n original</button>
   </section>
 
-  <section>
+  <section class="needs-wall">
     <div class="btnrow">
       <button id="btnExport">Exportar PNG</button>
       <button id="btnClear" class="danger">Vaciar pared</button>
     </div>
+  </section>
+
+  <section>
+    <h2>Copia de seguridad</h2>
+    <div class="btnrow">
+      <button id="btnBackupExport">Exportar .json</button>
+      <button id="btnBackupImport">Importar&hellip;</button>
+    </div>
+    <input type="file" id="backupInput" accept="application/json,.json" hidden>
+    <p class="hint">Guarda todas las paredes, los cuadros y las versiones en un archivo.
+      Es la &uacute;nica copia que vive fuera de este navegador.</p>
     <p class="hint" id="storageInfo">&nbsp;</p>
     <p class="hint" id="saveState">&nbsp;</p>
   </section>
@@ -127,6 +138,14 @@
     </div>
     <svg id="calLayer"></svg>
   </div>
+
+  <button id="emptyState" hidden>
+    <span class="ico">+</span>
+    <strong>Hac&eacute; clic para agregar tu primera imagen</strong>
+    <small>Sub&iacute; la foto de la pared que quer&eacute;s dise&ntilde;ar. Despu&eacute;s marc&aacute;s
+      las esquinas y escrib&iacute;s cu&aacute;nto mide de verdad.</small>
+  </button>
+
   <div id="dropHint">Solt&aacute; las im&aacute;genes</div>
 </main>
 

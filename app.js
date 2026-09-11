@@ -10,14 +10,9 @@
 const S = 10;                       // unidades por cm dentro de #wall
 const STORE_KEY = 'gallerywall.v1';
 
-/* Calibración medida sobre la foto (fracciones del tamaño de la imagen).
-   Orden: abajo-izq, abajo-der, arriba-der, arriba-izq */
-const DEFAULT_CORNERS = [
-  [0.371616, 0.771884],
-  [0.901027, 0.871849],
-  [0.936041, 0.217087],
-  [0.371616, 0.282388]
-];
+/* Punto de partida de una pared nueva: un rectángulo cómodo de agarrar en el
+   medio de la foto. Orden: abajo-izq, abajo-der, arriba-der, arriba-izq */
+const START_CORNERS = [[0.15, 0.85], [0.85, 0.85], [0.85, 0.20], [0.15, 0.20]];
 const DEFAULT_WALL = { w: 300, h: 260 };
 
 const FRAMES = [
@@ -96,32 +91,30 @@ const round = (v, n = 1) => Math.round(v * Math.pow(10, n)) / Math.pow(10, n);
    La biblioteca de imágenes es común a todas, así una misma lámina se puede
    probar en cualquier pared sin volver a subirla.
 
+   No hay pared por defecto: la app arranca vacía y la primera foto la sube el
+   usuario.
+
    state.cal / state.items / state.versions son el buffer de edición de la
    pared activa; se vuelcan a state.walls[current] en cada guardado.        */
 
-const BUILTIN_ID = 'escritorio';
+const clone = o => JSON.parse(JSON.stringify(o));
 
 function newWallObj(o) {
-  return Object.assign({
-    id: uid(), name: 'Pared', builtin: false,
+  const w = Object.assign({
+    id: uid(), name: 'Pared',
     src: null, imgW: 1500, imgH: 2000,
-    cal: { corners: [[0.15, 0.85], [0.85, 0.85], [0.85, 0.20], [0.15, 0.20]], wallW: 200, wallH: 250 },
+    cal: { corners: clone(START_CORNERS), wallW: DEFAULT_WALL.w, wallH: DEFAULT_WALL.h },
     items: [], versions: {}, light: null
   }, o);
-}
-
-function builtinWall() {
-  return newWallObj({
-    id: BUILTIN_ID, name: 'Escritorio', builtin: true,
-    src: null, imgW: window.PARED_SIZE.w, imgH: window.PARED_SIZE.h,
-    cal: { corners: DEFAULT_CORNERS.map(p => p.slice()), wallW: DEFAULT_WALL.w, wallH: DEFAULT_WALL.h }
-  });
+  // a esto vuelve "calibración original": el estado con el que nació la pared
+  if (!w.calBase) w.calBase = clone(w.cal);
+  return w;
 }
 
 let state = {
   walls: {},            // id -> pared
   order: [],            // orden de las paredes en el select
-  current: BUILTIN_ID,
+  current: null,
   library: {},          // imgId -> { src, ar }
   view: { guides: true, museum: true, grid: false, light: 85 },
   // buffer de la pared activa
@@ -129,7 +122,6 @@ let state = {
 };
 
 const curWall = () => state.walls[state.current];
-const wallSrc = w => (w.builtin ? window.PARED_IMG : w.src);
 
 let selected = null;
 let H = null, Hinv = null;   // wall-units <-> px de la foto
@@ -154,7 +146,7 @@ const LG_W = 9, LG_H = 11;
 
 function computeLightGrid() {
   const w = curWall();
-  if (!photo.complete || !photo.naturalWidth) return;
+  if (!w || !photo.complete || !photo.naturalWidth) return;
   const c = document.createElement('canvas');
   c.width = IMG_W; c.height = IMG_H;
   const ctx = c.getContext('2d', { willReadFrequently: true });
@@ -205,7 +197,8 @@ function lightFilter(X, Y) {
   return `brightness(${round(b, 3)}) sepia(${round(0.14 * k, 3)})`;
 }
 
-let IMG_W = window.PARED_SIZE.w, IMG_H = window.PARED_SIZE.h;
+/* tamaño de la foto activa; lo fija openWall al cargarla */
+let IMG_W = 1500, IMG_H = 2000;
 
 /* ============================================================
    Geometría
@@ -616,16 +609,18 @@ $('inWallH').addEventListener('change', e => {
 });
 $('chkCal').addEventListener('change', e => { calLayer.classList.toggle('on', e.target.checked); drawCal(); });
 $('btnCalReset').addEventListener('click', () => {
+  const w = curWall();
+  if (!w) return;
   pushUndo();
-  const base = curWall().builtin ? builtinWall() : newWallObj();
-  state.cal.corners = base.cal.corners;
-  state.cal.wallW = base.cal.wallW; state.cal.wallH = base.cal.wallH;
+  const base = w.calBase || newWallObj().cal;
+  state.cal.corners = clone(base.corners);
+  state.cal.wallW = base.wallW; state.cal.wallH = base.wallH;
   rebuildTransform(); fitStage(); computeLightGrid();
   renderItems(); renderRefs(); drawCal(); save();
 });
 
 function drawCal() {
-  if (!calLayer.classList.contains('on')) { calLayer.innerHTML = ''; return; }
+  if (!state.cal || !calLayer.classList.contains('on')) { calLayer.innerHTML = ''; return; }
   const pts = state.cal.corners.map(([fx, fy]) => [fx * IMG_W, fy * IMG_H]);
   calLayer.innerHTML =
     `<polygon points="${pts.map(p => p.join(',')).join(' ')}"/>` +
@@ -674,6 +669,7 @@ $('fileInput').addEventListener('change', e => { addFiles(e.target.files); e.tar
 viewport.addEventListener('drop', e => { if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
 
 function addFiles(files) {
+  if (!curWall()) { flash('primero subí la foto de una pared'); return; }
   const list = [...files].filter(f => f.type.startsWith('image/'));
   if (!list.length) return;
   let pending = list.length;
@@ -819,22 +815,44 @@ function load() {
     state.current = d.current;
     state.library = d.library || {};
   } else if (d && d.items) {                // formato viejo: una sola pared
-    const w = builtinWall();
-    w.cal = d.cal || w.cal; w.items = d.items; w.versions = d.versions || {};
-    state.walls = { [BUILTIN_ID]: w };
-    state.order = [BUILTIN_ID];
-    state.current = BUILTIN_ID;
+    const w = newWallObj({ name: 'Escritorio', legacy: true, items: d.items, versions: d.versions || {} });
+    if (d.cal) { w.cal = d.cal; w.calBase = clone(d.cal); }
+    state.walls = { [w.id]: w };
+    state.order = [w.id];
+    state.current = w.id;
     state.library = d.library || {};
   }
   if (d) state.view = Object.assign(state.view, d.view || {});
 
-  if (!state.walls[BUILTIN_ID]) {           // la pared del escritorio siempre está
-    state.walls[BUILTIN_ID] = builtinWall();
-    state.order.unshift(BUILTIN_ID);
-  }
-  if (!state.walls[state.current]) state.current = BUILTIN_ID;
+  adoptWalls();
+}
+
+/* La app nacía con la foto del escritorio embebida en pared.js: esa pared vivía
+   con builtin:true y src:null, leyendo la imagen del código. Ahora no hay pared
+   por defecto, así que se convierte en una pared normal y su foto pasa a
+   guardarse en el navegador como cualquier otra. Corrido esto una vez, pared.js
+   ya no hace falta. */
+let lostWalls = 0, adopted = 0;
+
+function adoptWalls() {
+  adopted = 0;
+  Object.values(state.walls).forEach(w => {
+    if ((w.builtin || w.legacy) && !w.src && window.PARED_IMG) {
+      w.src = window.PARED_IMG;
+      if (window.PARED_SIZE) { w.imgW = window.PARED_SIZE.w; w.imgH = window.PARED_SIZE.h; }
+    }
+    if (w.builtin || w.legacy || !w.calBase) adopted++;
+    delete w.builtin; delete w.legacy;
+    if (!w.calBase) w.calBase = clone(w.cal);
+  });
+  // una pared sin foto no se puede dibujar
+  lostWalls = 0;
+  Object.keys(state.walls).forEach(id => {
+    if (!state.walls[id].src) { delete state.walls[id]; lostWalls++; }
+  });
   state.order = state.order.filter(id => state.walls[id]);
   Object.keys(state.walls).forEach(id => { if (!state.order.includes(id)) state.order.push(id); });
+  if (!state.walls[state.current]) state.current = state.order[0] || null;
 }
 
 function refreshVersions() {
@@ -886,26 +904,64 @@ $('btnClear').addEventListener('click', () => {
    Paredes
    ============================================================ */
 
+/* ---------- sin ninguna pared ----------
+
+   La app puede no tener ni una foto todavía: arranque limpio, o borraste la
+   última pared. En vez de una pared falsa se muestra el placeholder, que abre
+   el mismo selector de archivos que "Subir foto…". */
+
+function showEmpty() {
+  state.cal = null; state.items = []; state.versions = {};
+  selected = null;
+  undoStack = []; redoStack = [];
+  photo.removeAttribute('src');
+  stage.hidden = true;
+  $('emptyState').hidden = false;
+  document.body.classList.add('empty');
+  $('chkCal').checked = false;
+  calLayer.classList.remove('on');
+  calLayer.innerHTML = '';
+  layer.innerHTML = ''; guidesEl.innerHTML = ''; refsEl.innerHTML = '';
+  $('wallInfo').textContent = 'ninguna pared todavía';
+  refreshWalls(); refreshVersions(); syncItemPanel();
+}
+
+function showStage() {
+  stage.hidden = false;
+  $('emptyState').hidden = true;
+  document.body.classList.remove('empty');
+}
+
+$('emptyState').addEventListener('click', () => $('wallInput').click());
+
 function refreshWalls() {
   const sel = $('wallSelect');
+  const w = curWall();
   sel.innerHTML = '';
   state.order.forEach(id => {
     const o = document.createElement('option');
     o.value = id; o.textContent = state.walls[id].name;
     sel.appendChild(o);
   });
-  sel.value = state.current;
-  const w = curWall();
-  $('btnWallDel').disabled = !!w.builtin;
-  $('calHint').textContent = w.builtin
-    ? 'Medí la pared real y escribí las medidas acá. Las 4 esquinas ya están puestas sobre la foto; movelas solo si algo no calza.'
-    : 'Poné las dos esquinas de abajo sobre la línea del piso y las de arriba en el techo (o a cualquier altura que sepas). Después escribí el ancho y el alto reales de ese rectángulo.';
+  if (!w) {
+    const o = document.createElement('option');
+    o.value = ''; o.textContent = '— ninguna pared —';
+    sel.appendChild(o);
+  }
+  sel.value = w ? state.current : '';
+  $('btnWallDel').disabled = !w;
+  $('btnWallRename').disabled = !w;
+  $('calHint').textContent = w
+    ? 'Poné las dos esquinas de abajo sobre la línea del piso y las de arriba en el techo (o a cualquier altura que sepas). Después escribí el ancho y el alto reales de ese rectángulo.'
+    : '';
 }
 
 /* carga la pared activa en el buffer y redibuja todo */
 function openWall(id, done) {
-  state.current = id;
+  state.current = id || null;
   const w = curWall();
+  if (!w) { showEmpty(); if (done) done(); return; }
+
   state.cal = w.cal; state.items = w.items; state.versions = w.versions;
   selected = null;
   undoStack = []; redoStack = [];
@@ -922,12 +978,13 @@ function openWall(id, done) {
     if (done) done();
   };
 
-  const src = wallSrc(w);
-  if (photo.src === src) apply();
-  else { photo.onload = apply; photo.src = src; }
+  showStage();
+  if (photo.src === w.src) apply();
+  else { photo.onload = apply; photo.src = w.src; }
 }
 
 $('wallSelect').addEventListener('change', e => {
+  if (!e.target.value) return;
   syncToWall();
   openWall(e.target.value, save);
 });
@@ -968,6 +1025,7 @@ $('wallInput').addEventListener('change', e => {
 
 $('btnWallRename').addEventListener('click', () => {
   const w = curWall();
+  if (!w) return;
   const n = prompt('Nombre de la pared:', w.name);
   if (!n) return;
   w.name = n; refreshWalls(); save();
@@ -975,7 +1033,7 @@ $('btnWallRename').addEventListener('click', () => {
 
 $('btnWallDel').addEventListener('click', () => {
   const w = curWall();
-  if (w.builtin) return;
+  if (!w) return;
   if (!confirm(`¿Borrar la pared "${w.name}" con sus cuadros?`)) return;
   delete state.walls[w.id];
   state.order = state.order.filter(id => id !== w.id);
@@ -997,6 +1055,7 @@ function exportPNG() {
 }
 
 function doExport() {
+  if (!state.cal) return;
   const { wallW, wallH } = state.cal;
   const UW = Math.round(wallW * S), UH = Math.round(wallH * S);
 
@@ -1114,17 +1173,83 @@ function refreshCache() {
 }
 
 /* ============================================================
+   Copia de seguridad
+
+   Todo vive en el localStorage de este navegador, que no se sincroniza con
+   nada y se va con los datos del sitio. El .json es la única copia real, y
+   además es el puente entre file:// y la URL publicada: son dos orígenes
+   distintos y no comparten nada.
+   ============================================================ */
+
+function backupJSON() {
+  syncToWall();
+  const { cal, items, versions, ...persist } = state;
+  return JSON.stringify({ app: 'gallerywall', v: 1, saved: new Date().toISOString(), state: persist });
+}
+
+$('btnBackupExport').addEventListener('click', () => {
+  const url = URL.createObjectURL(new Blob([backupJSON()], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gallery-wall-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  flash('copia descargada');
+});
+
+$('btnBackupImport').addEventListener('click', () => $('backupInput').click());
+$('backupInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    let d = null;
+    try { d = JSON.parse(fr.result); } catch (err) { /* abajo */ }
+    // acepta la copia nueva y también un volcado crudo del localStorage
+    const inc = d && d.state && d.state.walls ? d.state : (d && d.walls ? d : null);
+    if (!inc) { flash('ese archivo no es una copia de Gallery wall'); return; }
+    const paredes = Object.keys(inc.walls).length;
+    if (!confirm(`La copia trae ${paredes} pared(es). Reemplaza todo lo que tenés guardado ` +
+                 `en este navegador ahora mismo. ¿Seguir?`)) return;
+
+    state.walls = inc.walls;
+    state.order = inc.order || Object.keys(inc.walls);
+    state.current = inc.current;
+    state.library = inc.library || {};
+    state.view = Object.assign(state.view, inc.view || {});
+    state.cal = null; state.items = []; state.versions = {};
+    adoptWalls();
+    syncViewControls();
+    // save() avisa "guardado" con su propio retardo; el aviso de la copia va después
+    openWall(state.current, () => { save(); setTimeout(() => flash(`copia importada · ${paredes} pared(es)`), 400); });
+  };
+  fr.onerror = () => flash('no se pudo leer el archivo');
+  fr.readAsText(file);
+});
+
+/* ============================================================
    Arranque
    ============================================================ */
 
-function boot() {
-  load();
+function syncViewControls() {
   $('chkGuides').checked = state.view.guides;
   $('chkMuseum').checked = state.view.museum;
   $('chkGrid').checked = state.view.grid;
   $('inLight').value = state.view.light;
-  openWall(state.current, () => showStorage(JSON.stringify(state.walls).length));
+}
+
+function boot() {
+  load();
+  syncViewControls();
+  openWall(state.current, () => {
+    // la conversión de la pared vieja hay que bajarla a disco en el arranque:
+    // si no, vive solo en memoria y se pierde al cerrar la pestaña
+    if (adopted) save();
+    showStorage(JSON.stringify(state.walls).length);
+    if (lostWalls) flash(`${lostWalls} pared(es) sin foto quedaron afuera`);
+  });
 }
 
 boot();
-window.addEventListener('resize', () => { fitStage(); drawCal(); });
+window.addEventListener('resize', () => { if (!curWall()) return; fitStage(); drawCal(); });
