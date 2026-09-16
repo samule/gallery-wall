@@ -722,6 +722,9 @@ function restore(json) {
 }
 
 document.addEventListener('keydown', e => {
+  // durante el tutorial las flechas navegan el recorrido: que no muevan además
+  // el cuadro que haya quedado seleccionado abajo del overlay
+  if (document.body.classList.contains('driver-active')) return;
   if (e.key === 'Alt') noSnap = true;
   const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName);
   if (typing) return;
@@ -1006,6 +1009,7 @@ $('wallInput').addEventListener('change', e => {
         drawCal(); renderItems();
         flash('marcá las esquinas y poné las medidas');
         save();
+        GWTour.onNewWall();
       });
     };
     img.onerror = () => flash('no se pudo leer esa imagen');
@@ -1241,6 +1245,7 @@ function boot() {
     if (adopted) save();
     showStorage(JSON.stringify(state.walls).length);
     if (lostWalls) flash(`${lostWalls} pared(es) sin foto quedaron afuera`);
+    GWTour.onBoot();
   });
 }
 

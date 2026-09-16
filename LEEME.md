@@ -17,6 +17,18 @@ Ojo: el archivo local y la URL son dos instalaciones separadas. No comparten par
 cuadros, porque el navegador guarda los datos por origen. Para pasar de una a la otra
 está la copia de seguridad.
 
+## Tutorial
+
+La primera vez que entrás se abre solo un recorrido guiado. Son dos: uno corto cuando
+todavía no hay ninguna foto, que explica qué es esto y dónde subir la pared, y otro más
+largo apenas creás la primera, que recorre el panel en el orden en que conviene usarlo.
+
+Cada uno se muestra una sola vez. El botón **?** de arriba del panel los vuelve a abrir
+cuando quieras, y muestra el que corresponda al estado en el que estés.
+
+Se anota en el localStorage, en una clave aparte de la de las paredes: importar una copia
+de seguridad no resetea el tutorial, y borrar los datos del sitio lo vuelve a mostrar.
+
 ## Cómo funciona
 
 La foto está fija. Encima hay un plano de pared calibrado en centímetros reales, con la
@@ -87,4 +99,8 @@ por qué terminar en el repositorio.
 
 ## Archivos
 
-- `index.html`, `styles.css`, `app.js` — la app entera, sin dependencias
+- `index.html`, `styles.css`, `app.js` — la app entera
+- `tour.js` — los dos recorridos guiados
+- `vendor/driver.js/` — [driver.js](https://driverjs.com/) 1.5.0, la librería del tutorial,
+  copiada adentro del repo a propósito: así la app sigue abriéndose con doble clic y sin
+  internet. Es la única dependencia, y no se actualiza sola.

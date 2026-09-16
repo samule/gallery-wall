@@ -4,17 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gallery wall</title>
+<link rel="stylesheet" href="vendor/driver.js/driver.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <aside id="panel">
   <header>
-    <h1>Gallery wall</h1>
+    <div class="titlerow">
+      <h1>Gallery wall</h1>
+      <button id="btnTour" title="Ver el tutorial" aria-label="Ver el tutorial">?</button>
+    </div>
     <p id="wallInfo">pared 300 × 260 cm</p>
   </header>
 
-  <section>
+  <section id="wallSection">
     <h2>Pared</h2>
     <div class="row">
       <select id="wallSelect"></select>
@@ -27,7 +31,7 @@
     <input type="file" id="wallInput" accept="image/*" hidden>
   </section>
 
-  <section class="needs-wall">
+  <section id="addSection" class="needs-wall">
     <button id="btnAdd" class="primary">Agregar cuadro</button>
     <input type="file" id="fileInput" accept="image/*" multiple hidden>
     <p class="hint">o arrastr&aacute; im&aacute;genes a la pared</p>
@@ -74,7 +78,7 @@
     </div>
   </section>
 
-  <section class="needs-wall">
+  <section id="viewSection" class="needs-wall">
     <h2>Vista</h2>
     <label class="check"><input type="checkbox" id="chkGuides" checked> Gu&iacute;as de alineaci&oacute;n</label>
     <label class="check"><input type="checkbox" id="chkMuseum" checked> L&iacute;nea de 150 cm</label>
@@ -84,7 +88,7 @@
     </label>
   </section>
 
-  <section class="needs-wall">
+  <section id="verSection" class="needs-wall">
     <h2>Versiones</h2>
     <div class="row">
       <select id="verSelect"></select>
@@ -96,7 +100,7 @@
     </div>
   </section>
 
-  <section class="needs-wall">
+  <section id="calSection" class="needs-wall">
     <h2>Calibraci&oacute;n</h2>
     <div class="row2">
       <label>Ancho pared (cm) <input type="number" id="inWallW" step="1" min="20"></label>
@@ -107,14 +111,14 @@
     <button id="btnCalReset">Volver a la calibraci&oacute;n original</button>
   </section>
 
-  <section class="needs-wall">
+  <section id="exportSection" class="needs-wall">
     <div class="btnrow">
       <button id="btnExport">Exportar PNG</button>
       <button id="btnClear" class="danger">Vaciar pared</button>
     </div>
   </section>
 
-  <section>
+  <section id="backupSection">
     <h2>Copia de seguridad</h2>
     <div class="btnrow">
       <button id="btnBackupExport">Exportar .json</button>
@@ -149,6 +153,8 @@
   <div id="dropHint">Solt&aacute; las im&aacute;genes</div>
 </main>
 
+<script src="vendor/driver.js/driver.js.iife.js"></script>
+<script src="tour.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
