@@ -815,7 +815,7 @@ function load() {
     state.current = d.current;
     state.library = d.library || {};
   } else if (d && d.items) {                // formato viejo: una sola pared
-    const w = newWallObj({ name: 'Escritorio', legacy: true, items: d.items, versions: d.versions || {} });
+    const w = newWallObj({ name: 'Escritorio', items: d.items, versions: d.versions || {} });
     if (d.cal) { w.cal = d.cal; w.calBase = clone(d.cal); }
     state.walls = { [w.id]: w };
     state.order = [w.id];
@@ -827,23 +827,14 @@ function load() {
   adoptWalls();
 }
 
-/* La app nacía con la foto del escritorio embebida en pared.js: esa pared vivía
-   con builtin:true y src:null, leyendo la imagen del código. Ahora no hay pared
-   por defecto, así que se convierte en una pared normal y su foto pasa a
-   guardarse en el navegador como cualquier otra. Corrido esto una vez, pared.js
-   ya no hace falta. */
+/* Normaliza lo que vino del disco: completa el calBase de cada pared, descarta
+   las que no tengan foto y deja current/order consistentes. */
 let lostWalls = 0, adopted = 0;
 
 function adoptWalls() {
   adopted = 0;
   Object.values(state.walls).forEach(w => {
-    if ((w.builtin || w.legacy) && !w.src && window.PARED_IMG) {
-      w.src = window.PARED_IMG;
-      if (window.PARED_SIZE) { w.imgW = window.PARED_SIZE.w; w.imgH = window.PARED_SIZE.h; }
-    }
-    if (w.builtin || w.legacy || !w.calBase) adopted++;
-    delete w.builtin; delete w.legacy;
-    if (!w.calBase) w.calBase = clone(w.cal);
+    if (!w.calBase) { w.calBase = clone(w.cal); adopted++; }
   });
   // una pared sin foto no se puede dibujar
   lostWalls = 0;
@@ -1191,7 +1182,9 @@ $('btnBackupExport').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([backupJSON()], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `gallery-wall-${new Date().toISOString().slice(0, 10)}.json`;
+  const d = new Date();
+  const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  a.download = `gallery-wall-${fecha}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
   flash('copia descargada');
@@ -1243,7 +1236,7 @@ function boot() {
   load();
   syncViewControls();
   openWall(state.current, () => {
-    // la conversión de la pared vieja hay que bajarla a disco en el arranque:
+    // lo que adoptWalls haya completado hay que bajarlo a disco en el arranque:
     // si no, vive solo en memoria y se pierde al cerrar la pestaña
     if (adopted) save();
     showStorage(JSON.stringify(state.walls).length);
