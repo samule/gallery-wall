@@ -82,6 +82,9 @@ máquina, a otro navegador o entre el archivo local y la URL publicada.
 **Importar** reemplaza todo lo que tengas guardado por el contenido de la copia. Pide
 confirmación antes.
 
+Guardá la copia **fuera de la carpeta del proyecto**: lleva las fotos adentro y no tiene
+por qué terminar en el repositorio.
+
 ## Archivos
 
 - `index.html`, `styles.css`, `app.js` — la app entera, sin dependencias
